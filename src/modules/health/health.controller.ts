@@ -1,7 +1,8 @@
-const logger = require('../../utils/logger')
+import { NextFunction, Request, Response } from 'express'
+import logger from '../../utils/logger'
 
 class HealthController {
-	getHealth = (req, res, next) => {
+	getHealth = (req: Request, res: Response, next: NextFunction) => {
 		try {
 			res.status(200).json({ status: 'OK', uptime: process.uptime() })
 		} catch (error) {
@@ -10,7 +11,7 @@ class HealthController {
 		}
 	}
 
-	getPing = (req, res, next) => {
+	getPing = (req: Request, res: Response, next: NextFunction) => {
 		try {
 			res.send('pong')
 		} catch (error) {
@@ -20,4 +21,4 @@ class HealthController {
 	}
 }
 
-module.exports = new HealthController()
+export default new HealthController()
