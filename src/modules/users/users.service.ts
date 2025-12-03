@@ -1,31 +1,34 @@
-const usersRepository = require('./users.repository')
-const redisClient = require('../../utils/redis')
-const logger = require('../../utils/logger')
+import { Prisma, User } from '@prisma/client'
+import logger from '../../utils/logger'
+import redisClient from '../../utils/redis'
+import usersRepository from './users.repository'
 
 class UsersService {
-	async getAllUsers() {
+	async getAllUsers(): Promise<User[]> {
 		return usersRepository.getAllUsers()
 	}
-	async createUser(user) {
-		return usersRepository.createUser(user)
+
+	async createUser(data: Prisma.UserCreateInput): Promise<User> {
+		return usersRepository.createUser(data)
 	}
 
-	async getUserById(id) {
-		const cacheKey = `user:${id}`
+	async getUserById(id: string): Promise<User | null> {
+		const numericId = parseInt(id, 10)
+		const cacheKey = `user:${numericId}`
+
 		const cachedData = await redisClient.get(cacheKey)
 
 		if (cachedData) {
 			logger.info(`Serving user ${id} from REDIS`)
-			return JSON.parse(cachedData)
+			return JSON.parse(cachedData) as User
 		}
 
 		logger.info(`Serving user ${id} from DB`)
-		const user = await usersRepository.findById(id)
+		const user = await usersRepository.findById(numericId)
 
 		if (user) await redisClient.setEx(cacheKey, 3600, JSON.stringify(user))
-
 		return user
 	}
 }
 
-module.exports = new UsersService()
+export default new UsersService()

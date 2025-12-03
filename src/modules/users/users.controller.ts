@@ -1,7 +1,8 @@
-const userService = require('./users.service')
+import { NextFunction, Request, Response } from 'express'
+import userService from './users.service'
 
 class UsersController {
-	getAll = async (req, res, next) => {
+	getAll = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const users = await userService.getAllUsers()
 			res.json(users)
@@ -10,7 +11,7 @@ class UsersController {
 		}
 	}
 
-	create = async (req, res, next) => {
+	create = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const newUser = await userService.createUser(req.body)
 			res.status(201).json(newUser)
@@ -19,15 +20,20 @@ class UsersController {
 		}
 	}
 
-	getOne = async (req, res, next) => {
+	getOne = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const { id } = req.params
 			const user = await userService.getUserById(id)
-			if (!user) return res.status(404).json({ message: 'User not found' })
+
+			if (!user) {
+				res.status(404).json({ message: 'User not found' })
+				return
+			}
 			res.json(user)
 		} catch (error) {
 			next(error)
 		}
 	}
 }
-module.exports = new UsersController()
+
+export default new UsersController()
