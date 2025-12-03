@@ -1,0 +1,181 @@
+openapi: 3.0.0
+info:
+  title: Express Core API
+  version: 1.0.0
+  description: API documentation for Star Wars CRM system
+servers:
+  - url: http://localhost:3000
+    description: Local Development
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterInput:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          example: luke@jedi.com
+        password:
+          type: string
+          format: password
+          example: force123
+          minLength: 6
+        name:
+          type: string
+          example: Luke Skywalker
+        role:
+          type: string
+          enum: [Jedi, Sith, Senator]
+          default: Jedi
+
+    LoginInput:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: luke@jedi.com
+        password:
+          type: string
+          format: password
+          example: force123
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+            email:
+              type: string
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+
+paths:
+  /health:
+    get:
+      description: Check server health
+      tags: [System]
+      responses:
+        '200':
+          description: Server is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  uptime:
+                    type: number
+
+  /auth/register:
+    post:
+      description: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation error or User exists
+
+  /auth/login:
+    post:
+      description: Login user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid credentials
+
+  /auth/refresh:
+    post:
+      description: Refresh access token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Tokens refreshed
+        '401':
+          description: Invalid refresh token
+
+  /users:
+    get:
+      description: Get all users (Protected)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of users
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Wrong Role)
+
+  /users/{id}:
+    get:
+      description: Get user by ID (Protected + Cached)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the user
+      responses:
+        '200':
+          description: User details
+        '404':
+          description: User not found
