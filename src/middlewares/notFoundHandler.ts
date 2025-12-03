@@ -1,7 +1,8 @@
-const ApiError = require('../utils/ApiError')
+import { NextFunction, Request, Response } from 'express'
+import ApiError from '../utils/ApiError'
 
-const notFoundHandler = (req, res, next) => {
+const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
 	next(ApiError.NotFound('Route not found'))
 }
 
-module.exports = notFoundHandler
+export default notFoundHandler

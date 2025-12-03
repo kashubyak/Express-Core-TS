@@ -1,7 +1,9 @@
-const ApiError = require('../utils/ApiError')
+import { NextFunction, Request, Response } from 'express'
+import { Schema } from 'joi'
+import ApiError from '../utils/ApiError'
 
-const validateBody = schema => {
-	return (req, res, next) => {
+const validateBody = (schema: Schema) => {
+	return (req: Request, res: Response, next: NextFunction) => {
 		const { error } = schema.validate(req.body, { abortEarly: false })
 
 		if (error) {
@@ -16,4 +18,4 @@ const validateBody = schema => {
 	}
 }
 
-module.exports = validateBody
+export default validateBody

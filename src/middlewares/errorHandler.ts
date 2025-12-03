@@ -1,12 +1,14 @@
-const ApiError = require('../utils/ApiError')
-const config = require('../config/config')
+import { NextFunction, Request, Response } from 'express'
+import config from '../config/config'
+import ApiError from '../utils/ApiError'
 
-const ErrorHandler = (err, req, res, next) => {
+const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
 	console.error(err)
+
 	if (err instanceof ApiError) {
 		return res.status(err.status).json({
 			message: err.message,
-			error: err.error,
+			errors: err.errors,
 		})
 	}
 
@@ -15,4 +17,5 @@ const ErrorHandler = (err, req, res, next) => {
 		error: config.env === 'development' ? err.message : undefined,
 	})
 }
-module.exports = ErrorHandler
+
+export default errorHandler

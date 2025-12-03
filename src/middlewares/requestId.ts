@@ -1,10 +1,11 @@
-const { v4: uuidv4 } = require('uuid')
+import { NextFunction, Request, Response } from 'express'
+import { v4 as uuidv4 } from 'uuid'
 
-const requestId = (req, res, next) => {
-	req.id = req.headers['x-request-id'] || uuidv4()
-	res.setHeader('x-request-id', req.id)
+const requestId = (req: Request, res: Response, next: NextFunction) => {
+	req.id = (req.headers['x-request-id'] as string) || uuidv4()
 
+	res.setHeader('x-request-id', req.id!)
 	next()
 }
 
-module.exports = requestId
+export default requestId
