@@ -1,7 +1,8 @@
 import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
+import jwt, { SignOptions } from 'jsonwebtoken'
 import config from '../../config/config'
 import ApiError from '../../utils/ApiError'
+import usersRepository from '../users/users.repository'
 
 interface RegisterDto {
 	email: string
@@ -19,10 +20,12 @@ class AuthService {
 	generateTokens(payload: TokenPayload) {
 		const accessToken = jwt.sign(payload, config.jwt.accessSecret, {
 			expiresIn: config.jwt.accessExpiresIn,
-		})
+		} as SignOptions)
+
 		const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, {
 			expiresIn: config.jwt.refreshExpiresIn,
-		})
+		} as SignOptions)
+
 		return { accessToken, refreshToken }
 	}
 
@@ -30,9 +33,7 @@ class AuthService {
 		const { email, password, name, role } = data
 
 		const existingUser = await usersRepository.findByEmail(email)
-		if (existingUser) {
-			throw ApiError.BadRequest('User with this email already exists')
-		}
+		if (existingUser) throw ApiError.BadRequest('User with this email already exists')
 
 		const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -52,14 +53,10 @@ class AuthService {
 
 	async login(email: string, password: string) {
 		const user = await usersRepository.findByEmail(email)
-		if (!user) {
-			throw ApiError.BadRequest('Invalid email or password')
-		}
+		if (!user) throw ApiError.BadRequest('Invalid email or password')
 
 		const isPasswordValid = await bcrypt.compare(password, user.password)
-		if (!isPasswordValid) {
-			throw ApiError.BadRequest('Invalid email or password')
-		}
+		if (!isPasswordValid) throw ApiError.BadRequest('Invalid email or password')
 
 		const tokens = this.generateTokens({ id: user.id, role: user.role })
 
@@ -68,9 +65,7 @@ class AuthService {
 	}
 
 	async refresh(refreshToken: string) {
-		if (!refreshToken) {
-			throw ApiError.Unauthorized()
-		}
+		if (!refreshToken) throw ApiError.Unauthorized()
 
 		try {
 			const userData = jwt.verify(refreshToken, config.jwt.refreshSecret) as TokenPayload
