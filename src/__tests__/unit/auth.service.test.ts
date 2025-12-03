@@ -1,8 +1,8 @@
-const authService = require('../../modules/auth/auth.service')
-const usersRepository = require('../../modules/users/users.repository')
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-const ApiError = require('../../utils/ApiError')
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
+import authService from '../../modules/auth/auth.service'
+import usersRepository from '../../modules/users/users.repository'
+import ApiError from '../../utils/ApiError'
 
 jest.mock('../../modules/users/users.repository')
 jest.mock('bcrypt')
@@ -22,12 +22,18 @@ describe('AuthService', () => {
 				role: 'Jedi',
 			}
 			const hashedPassword = 'hashed_password_123'
-			const createdUser = { id: 1, ...inputData, password: hashedPassword }
+			const createdUser = {
+				id: 1,
+				...inputData,
+				password: hashedPassword,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			}
 
-			usersRepository.findByEmail.mockResolvedValue(null)
-			bcrypt.hash.mockResolvedValue(hashedPassword)
-			usersRepository.createUser.mockResolvedValue(createdUser)
-			jwt.sign.mockReturnValue('mock_token')
+			;(usersRepository.findByEmail as jest.Mock).mockResolvedValue(null)
+			;(bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword as never)
+			;(usersRepository.createUser as jest.Mock).mockResolvedValue(createdUser)
+			;(jwt.sign as jest.Mock).mockReturnValue('mock_token')
 
 			const result = await authService.register(inputData)
 
@@ -41,8 +47,17 @@ describe('AuthService', () => {
 		})
 
 		it('should throw error if user already exists', async () => {
-			const inputData = { email: 'vader@sith.com' }
-			usersRepository.findByEmail.mockResolvedValue({ id: 1, email: 'vader@sith.com' })
+			const inputData = {
+				email: 'vader@sith.com',
+				password: '123',
+				name: 'Vader',
+				role: 'Sith',
+			}
+
+			;(usersRepository.findByEmail as jest.Mock).mockResolvedValue({
+				id: 1,
+				email: inputData.email,
+			})
 
 			await expect(authService.register(inputData)).rejects.toThrow(ApiError)
 		})
@@ -54,12 +69,15 @@ describe('AuthService', () => {
 			email: 'yoda@jedi.com',
 			password: 'hashed_secret',
 			role: 'GrandMaster',
+			name: 'Yoda',
+			createdAt: new Date(),
+			updatedAt: new Date(),
 		}
 
 		it('should login successfully with correct credentials', async () => {
-			usersRepository.findByEmail.mockResolvedValue(mockUser)
-			bcrypt.compare.mockResolvedValue(true)
-			jwt.sign.mockReturnValue('mock_token')
+			;(usersRepository.findByEmail as jest.Mock).mockResolvedValue(mockUser)
+			;(bcrypt.compare as jest.Mock).mockResolvedValue(true as never)
+			;(jwt.sign as jest.Mock).mockReturnValue('mock_token')
 
 			const result = await authService.login('yoda@jedi.com', 'secret')
 
@@ -69,7 +87,7 @@ describe('AuthService', () => {
 		})
 
 		it('should throw error if user not found', async () => {
-			usersRepository.findByEmail.mockResolvedValue(null)
+			;(usersRepository.findByEmail as jest.Mock).mockResolvedValue(null)
 
 			await expect(authService.login('unknown@user.com', '123')).rejects.toThrow(
 				'Invalid email or password',
@@ -77,8 +95,8 @@ describe('AuthService', () => {
 		})
 
 		it('should throw error if password is wrong', async () => {
-			usersRepository.findByEmail.mockResolvedValue(mockUser)
-			bcrypt.compare.mockResolvedValue(false)
+			;(usersRepository.findByEmail as jest.Mock).mockResolvedValue(mockUser)
+			;(bcrypt.compare as jest.Mock).mockResolvedValue(false as never)
 
 			await expect(authService.login('yoda@jedi.com', 'wrong_pass')).rejects.toThrow(
 				'Invalid email or password',
@@ -89,8 +107,8 @@ describe('AuthService', () => {
 	describe('refresh', () => {
 		it('should return new tokens if refresh token is valid', async () => {
 			const payload = { id: 1, role: 'Jedi' }
-			jwt.verify.mockReturnValue(payload)
-			jwt.sign.mockReturnValue('new_mock_token')
+			;(jwt.verify as jest.Mock).mockReturnValue(payload)
+			;(jwt.sign as jest.Mock).mockReturnValue('new_mock_token')
 
 			const result = await authService.refresh('valid_refresh_token')
 
@@ -102,11 +120,12 @@ describe('AuthService', () => {
 		})
 
 		it('should throw Unauthorized if token is missing', async () => {
+			// @ts-ignore
 			await expect(authService.refresh(null)).rejects.toThrow(ApiError)
 		})
 
 		it('should throw Unauthorized if token is invalid', async () => {
-			jwt.verify.mockImplementation(() => {
+			;(jwt.verify as jest.Mock).mockImplementation(() => {
 				throw new Error('Invalid token')
 			})
 

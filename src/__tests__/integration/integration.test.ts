@@ -1,11 +1,12 @@
-const request = require('supertest')
-const app = require('../../app')
-const prisma = require('../../utils/prisma')
-const redisClient = require('../../utils/redis')
+import request from 'supertest'
+import app from '../../app'
+import prisma from '../../utils/prisma'
+import redisClient from '../../utils/redis'
 
 let accessToken = ''
+
 const testUser = {
-	email: `test_${Date.now()}@integration.com`,
+	email: `test_ts_${Date.now()}@integration.com`,
 	password: 'password123',
 	name: 'Integration Tester',
 	role: 'Jedi',
@@ -57,7 +58,8 @@ describe('Integration Tests (Auth & Users)', () => {
 
 		expect(res.statusCode).toEqual(200)
 		expect(Array.isArray(res.body)).toBeTruthy()
-		const found = res.body.find(u => u.email === testUser.email)
+
+		const found = res.body.find((u: any) => u.email === testUser.email)
 		expect(found).toBeDefined()
 	})
 })
