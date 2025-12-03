@@ -1,7 +1,8 @@
-const authService = require('./auth.service')
+import { NextFunction, Request, Response } from 'express'
+import authService from './auth.service'
 
 class AuthController {
-	register = async (req, res, next) => {
+	register = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const data = await authService.register(req.body)
 			res.status(201).json(data)
@@ -10,7 +11,7 @@ class AuthController {
 		}
 	}
 
-	login = async (req, res, next) => {
+	login = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const { email, password } = req.body
 			const data = await authService.login(email, password)
@@ -20,7 +21,7 @@ class AuthController {
 		}
 	}
 
-	refresh = async (req, res, next) => {
+	refresh = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const { refreshToken } = req.body
 			const tokens = await authService.refresh(refreshToken)
@@ -31,4 +32,4 @@ class AuthController {
 	}
 }
 
-module.exports = new AuthController()
+export default new AuthController()

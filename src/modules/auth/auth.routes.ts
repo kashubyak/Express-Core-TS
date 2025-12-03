@@ -1,8 +1,9 @@
-const express = require('express')
-const router = express.Router()
-const authController = require('./auth.controller')
-const validateBody = require('../../middlewares/validateBody')
-const Joi = require('joi')
+import { Router } from 'express'
+import Joi from 'joi'
+import validateBody from '../../middlewares/validateBody'
+import authController from './auth.controller'
+
+const router = Router()
 
 const registerSchema = Joi.object({
 	email: Joi.string().email().required(),
@@ -20,4 +21,4 @@ router.post('/register', validateBody(registerSchema), authController.register)
 router.post('/login', validateBody(loginSchema), authController.login)
 router.post('/refresh', authController.refresh)
 
-module.exports = router
+export default router

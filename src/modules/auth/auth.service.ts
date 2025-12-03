@@ -1,11 +1,22 @@
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-const usersRepository = require('../users/users.repository')
-const config = require('../../config/config')
-const ApiError = require('../../utils/ApiError')
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
+import config from '../../config/config'
+import ApiError from '../../utils/ApiError'
+
+interface RegisterDto {
+	email: string
+	password: string
+	name: string
+	role: string
+}
+
+interface TokenPayload {
+	id: number
+	role: string
+}
 
 class AuthService {
-	generateTokens(payload) {
+	generateTokens(payload: TokenPayload) {
 		const accessToken = jwt.sign(payload, config.jwt.accessSecret, {
 			expiresIn: config.jwt.accessExpiresIn,
 		})
@@ -15,13 +26,16 @@ class AuthService {
 		return { accessToken, refreshToken }
 	}
 
-	async register(data) {
+	async register(data: RegisterDto) {
 		const { email, password, name, role } = data
 
 		const existingUser = await usersRepository.findByEmail(email)
-		if (existingUser) throw ApiError.BadRequest('User with this email already exists')
+		if (existingUser) {
+			throw ApiError.BadRequest('User with this email already exists')
+		}
 
 		const hashedPassword = await bcrypt.hash(password, 10)
+
 		const newUser = await usersRepository.createUser({
 			name,
 			email,
@@ -32,15 +46,20 @@ class AuthService {
 		const tokens = this.generateTokens({ id: newUser.id, role: newUser.role })
 
 		const { password: _, ...userWithoutPassword } = newUser
+
 		return { user: userWithoutPassword, ...tokens }
 	}
 
-	async login(email, password) {
+	async login(email: string, password: string) {
 		const user = await usersRepository.findByEmail(email)
-		if (!user) throw ApiError.BadRequest('Invalid email or password')
+		if (!user) {
+			throw ApiError.BadRequest('Invalid email or password')
+		}
 
 		const isPasswordValid = await bcrypt.compare(password, user.password)
-		if (!isPasswordValid) throw ApiError.BadRequest('Invalid email or password')
+		if (!isPasswordValid) {
+			throw ApiError.BadRequest('Invalid email or password')
+		}
 
 		const tokens = this.generateTokens({ id: user.id, role: user.role })
 
@@ -48,11 +67,13 @@ class AuthService {
 		return { user: userWithoutPassword, ...tokens }
 	}
 
-	async refresh(refreshToken) {
-		if (!refreshToken) throw ApiError.Unauthorized()
+	async refresh(refreshToken: string) {
+		if (!refreshToken) {
+			throw ApiError.Unauthorized()
+		}
 
 		try {
-			const userData = jwt.verify(refreshToken, config.jwt.refreshSecret)
+			const userData = jwt.verify(refreshToken, config.jwt.refreshSecret) as TokenPayload
 			const tokens = this.generateTokens({ id: userData.id, role: userData.role })
 			return tokens
 		} catch (e) {
@@ -61,4 +82,4 @@ class AuthService {
 	}
 }
 
-module.exports = new AuthService()
+export default new AuthService()
