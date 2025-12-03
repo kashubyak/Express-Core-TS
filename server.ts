@@ -1,7 +1,7 @@
-const app = require('./src/app')
-const config = require('./src/config/config')
-const redisClient = require('./src/utils/redis')
-const logger = require('./src/utils/logger')
+import app from './src/app'
+import config from './src/config/config'
+import logger from './src/utils/logger'
+import redisClient from './src/utils/redis'
 
 const startServer = async () => {
 	try {
